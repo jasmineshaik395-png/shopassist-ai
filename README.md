@@ -159,7 +159,7 @@ shopassist-ai/
 ## 📬 Contact
 
 - **Name:** Shaik Jasmine
-- **Email:** *(your email)*
+- **Email:** jasmineshaik395@gmail.com
 - **Submission Portal:** https://flowzint.in/2026/ai/hackothon/
 
 ---
