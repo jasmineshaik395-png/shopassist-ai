@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ShopAssist AI — Customer Care Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --navy: #0A2342; --teal: #028090; --mint: #02C39A;
+    --light: #F0FAFA; --white: #FFFFFF; --gray: #64748B;
+    --lgray: #E2E8F0; --text: #1E293B;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(2,128,144,0.18) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(2,195,154,0.10) 0%, transparent 50%);
+  }
+  .wrapper {
+    width: 100%; max-width: 780px;
+    display: flex; flex-direction: column;
+    height: 92vh; max-height: 860px;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--teal), #014f59);
+    border-radius: 20px 20px 0 0;
+    padding: 18px 24px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 4px 24px rgba(2,128,144,0.3);
+  }
+  .bot-avatar {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    border: 1.5px solid rgba(255,255,255,0.25);
+    flex-shrink: 0;
+  }
+  .header-info { flex: 1; }
+  .header-info h1 { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:800; color:white; }
+  .header-info p { font-size:0.78rem; color:rgba(255,255,255,0.75); margin-top:2px; font-weight:300; }
+  .status-dot {
+    width:10px; height:10px; background:var(--mint);
+    border-radius:50%; flex-shrink:0;
+    box-shadow: 0 0 0 3px rgba(2,195,154,0.25);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100%{box-shadow:0 0 0 3px rgba(2,195,154,0.25)}
+    50%{box-shadow:0 0 0 6px rgba(2,195,154,0.1)}
+  }
+  .quick-actions {
+    background: #0d2d47; padding: 10px 18px;
+    display:flex; gap:8px; flex-wrap:wrap;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .quick-btn {
+    font-family:'DM Sans',sans-serif; font-size:0.72rem; font-weight:500;
+    background:rgba(2,128,144,0.2); color:var(--mint);
+    border:1px solid rgba(2,195,154,0.3);
+    border-radius:20px; padding:5px 13px;
+    cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .quick-btn:hover { background:rgba(2,195,154,0.2); border-color:var(--mint); transform:translateY(-1px); }
+  .chat-area {
+    flex:1; background:var(--light);
+    overflow-y:auto; padding:20px 20px 10px;
+    display:flex; flex-direction:column; gap:14px;
+    scroll-behavior:smooth;
+  }
+  .chat-area::-webkit-scrollbar{width:5px}
+  .chat-area::-webkit-scrollbar-thumb{background:var(--lgray);border-radius:10px}
+  .msg-row { display:flex; gap:10px; animation:fadeUp 0.3s ease; }
+  .msg-row.user { flex-direction:row-reverse; }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .msg-avatar {
+    width:34px; height:34px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; flex-shrink:0; margin-top:2px;
+  }
+  .msg-row.bot .msg-avatar{background:var(--teal)}
+  .msg-row.user .msg-avatar{background:var(--navy)}
+  .bubble { max-width:72%; padding:11px 16px; border-radius:16px; font-size:0.88rem; line-height:1.6; }
+  .msg-row.bot .bubble {
+    background:white; color:var(--text);
+    border-radius:4px 16px 16px 16px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.07);
+  }
+  .msg-row.user .bubble { background:var(--teal); color:white; border-radius:16px 4px 16px 16px; }
+  .bubble .label { font-size:0.68rem; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:4px; opacity:0.55; }
+  .typing-indicator { display:flex; gap:10px; align-items:flex-start; }
+  .typing-dots {
+    background:white; border-radius:4px 16px 16px 16px;
+    padding:12px 18px; box-shadow:0 2px 10px rgba(0,0,0,0.07);
+    display:flex; gap:5px; align-items:center;
+  }
+  .typing-dots span {
+    width:7px; height:7px; background:var(--teal);
+    border-radius:50%; animation:bounce 1.2s infinite; opacity:0.6;
+  }
+  .typing-dots span:nth-child(2){animation-delay:0.2s}
+  .typing-dots span:nth-child(3){animation-delay:0.4s}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px);opacity:1}}
+  .input-area {
+    background:white; border-radius:0 0 20px 20px;
+    padding:14px 16px; display:flex; gap:10px;
+    align-items:center; border-top:1px solid var(--lgray);
+    box-shadow:0 -2px 20px rgba(0,0,0,0.05);
+  }
+  #userInput {
+    flex:1; border:1.5px solid var(--lgray); border-radius:12px;
+    padding:11px 16px; font-family:'DM Sans',sans-serif;
+    font-size:0.9rem; color:var(--text); outline:none;
+    resize:none; min-height:44px; max-height:120px;
+    transition:border-color 0.2s; background:var(--light);
+  }
+  #userInput:focus{border-color:var(--teal);background:white}
+  #userInput::placeholder{color:#aab}
+  #sendBtn {
+    width:44px; height:44px; background:var(--teal);
+    border:none; border-radius:12px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:all 0.2s; flex-shrink:0; font-size:18px; color:white;
+  }
+  #sendBtn:hover{background:var(--mint);transform:scale(1.05)}
+  #sendBtn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+  .footer-note {
+    text-align:center; margin-top:10px;
+    font-size:0.7rem; color:rgba(255,255,255,0.35); font-weight:300;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="bot-avatar">🤖</div>
+    <div class="header-info">
+      <h1>ShopAssist AI</h1>
+      <p>E-Commerce Customer Care · Always Online · No internet needed</p>
+    </div>
+    <div class="status-dot"></div>
+  </div>
+  <div class="quick-actions">
+    <button class="quick-btn" onclick="quickSend('Track my order #12345')">📦 Track Order</button>
+    <button class="quick-btn" onclick="quickSend('I want to return my product')">🔁 Return Item</button>
+    <button class="quick-btn" onclick="quickSend('My payment failed')">💳 Payment Issue</button>
+    <button class="quick-btn" onclick="quickSend('My delivery is very late')">🚚 Delivery Help</button>
+    <button class="quick-btn" onclick="quickSend('Recommend headphones under Rs.2000')">🛒 Products</button>
+  </div>
+  <div class="chat-area" id="chatArea"></div>
+  <div class="input-area">
+    <textarea id="userInput" placeholder="Type your question here..." rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+<p class="footer-note">FlowZint AI Hackathon 2026 · ShopAssist AI · Built by Shaik Jasmine · jasmineshaik395@gmail.com</p>
+
+<script>
+const orders = {
+  '12345':{'status':'Out for delivery','detail':'Expected by 6:00 PM today. Delivery partner: Delhivery. 📦','city':'Hyderabad'},
+  '67890':{'status':'Processing','detail':'Being packed, ships within 2 business days. 🏭','city':'Mumbai'},
+  '11111':{'status':'Delivered','detail':'Delivered yesterday at 3:45 PM. Received by: Self. ✅','city':'Bangalore'},
+  '99999':{'status':'Cancelled','detail':'Order cancelled. Refund of Rs.899 credited in 3-5 days. ❌','city':'Delhi'},
+};
+const products = {
+  headphone:[
+    {name:'boAt Bassheads 100',price:'Rs.399',rating:'4.2★',note:'Best budget pick'},
+    {name:'JBL C50HI',price:'Rs.799',rating:'4.3★',note:'Clear audio, mic included'},
+    {name:'Sony MDR-ZX110',price:'Rs.1,299',rating:'4.4★',note:'Premium sound under Rs.2000'},
+  ],
+  phone:[
+    {name:'Redmi 13C',price:'Rs.8,999',rating:'4.3★',note:'Best entry-level phone'},
+    {name:'Realme C65',price:'Rs.10,499',rating:'4.2★',note:'Large battery, 50MP camera'},
+  ],
+  laptop:[
+    {name:'Lenovo IdeaPad Slim 3',price:'Rs.32,990',rating:'4.3★',note:'Best for students'},
+    {name:'HP 15s',price:'Rs.36,999',rating:'4.4★',note:'Reliable, good display'},
+  ],
+};
+
+function getBotReply(msg) {
+  const m = msg.toLowerCase();
+  const orderMatch = m.match(/#?(\d{4,6})/);
+
+  if (orderMatch) {
+    const id = orderMatch[1];
+    const o = orders[id];
+    if (o) return '📦 Order #'+id+' — Status: <strong>'+o.status+'</strong><br><br>'+o.detail+'<br><br>Anything else I can help with?';
+    return '🔍 Order <strong>#'+id+'</strong> found!<br><br>Status: <strong>Shipped</strong> — In transit via Blue Dart.<br>Expected delivery: Tomorrow by 8 PM. 🚛<br><br>Need anything else?';
+  }
+  if (m.includes('track')||m.includes('order status')||m.includes('where is my order')) {
+    return '📦 Sure! Please share your <strong>order number</strong> (e.g. #12345) so I can track it for you.';
+  }
+  if (m.includes('return')||m.includes('exchange')) {
+    return '🔁 I can help with your return!<br><br>Here\'s the process:<br>1. Return request accepted ✅<br>2. Pickup scheduled within <strong>24 hours</strong><br>3. Refund in <strong>5-7 business days</strong><br><br>Please share your <strong>order number</strong> to proceed.';
+  }
+  if (m.includes('refund')) {
+    return '💰 Refunds are processed within <strong>5-7 business days</strong> after we receive your item.<br><br>UPI/wallet: 1-2 days ⚡<br>Bank transfer: 3-5 days 🏦<br><br>Want me to check your specific refund?';
+  }
+  if (m.includes('payment')||m.includes('failed')||m.includes('transaction')) {
+    return '💳 Sorry your payment failed! Try these:<br><br>• <strong>UPI</strong> (Google Pay / PhonePe) — most reliable<br>• <strong>Net Banking</strong> — direct transfer<br>• <strong>Cash on Delivery</strong> — pay when item arrives<br>• <strong>Retry</strong> after 10 mins<br><br>Want me to place the order with Cash on Delivery?';
+  }
+  if (m.includes('delivery')||m.includes('late')||m.includes('delayed')||m.includes('not received')) {
+    return '🚚 So sorry your delivery is delayed!<br><br>I\'ve flagged your order for <strong>priority delivery</strong>. Expected within <strong>24 hours</strong>.<br><br>If it doesn\'t arrive, I\'ll escalate to our courier partner.<br>Please share your <strong>order number</strong> to help faster.';
+  }
+  if (m.includes('cancel')) {
+    return '❌ Orders can be cancelled <strong>before shipment</strong> for a full refund.<br><br>If already shipped, you can <strong>return it</strong> after delivery.<br>Refund credited in <strong>5-7 business days</strong>.<br><br>Share your order number to proceed.';
+  }
+  if (m.includes('damaged')||m.includes('broken')||m.includes('wrong product')||m.includes('defective')) {
+    return '😔 So sorry about that! For damaged or wrong items you get:<br><br>✅ <strong>Free replacement</strong> (ships in 2 days)<br>✅ <strong>Full refund</strong> (5-7 business days)<br><br>No need to return the damaged item!<br>Share your <strong>order number</strong> and I\'ll raise this immediately.';
+  }
+  if (m.includes('headphone')||m.includes('earphone')||m.includes('earbud')) {
+    let r='🎧 Top headphones for you:<br><br>';
+    products.headphone.forEach(p=>{r+='• <strong>'+p.name+'</strong> — '+p.price+' | '+p.rating+' | '+p.note+'<br>';});
+    return r+'<br>All with free delivery! Want details on any?';
+  }
+  if (m.includes('phone')||m.includes('mobile')||m.includes('smartphone')) {
+    let r='📱 Top smartphones:<br><br>';
+    products.phone.forEach(p=>{r+='• <strong>'+p.name+'</strong> — '+p.price+' | '+p.rating+' | '+p.note+'<br>';});
+    return r+'<br>All come with manufacturer warranty!';
+  }
+  if (m.includes('laptop')||m.includes('computer')) {
+    let r='💻 Recommended laptops:<br><br>';
+    products.laptop.forEach(p=>{r+='• <strong>'+p.name+'</strong> — '+p.price+' | '+p.rating+' | '+p.note+'<br>';});
+    return r+'<br>All with 1-year warranty + free delivery!';
+  }
+  if (m.includes('recommend')||m.includes('suggest')||m.includes('best')) {
+    return '🛒 What are you looking for?<br><br>• 🎧 Headphones / Earphones<br>• 📱 Smartphones<br>• 💻 Laptops<br>• 👕 Clothing<br>• 🏠 Home & Kitchen<br><br>Tell me your <strong>category and budget</strong>!';
+  }
+  if (m.includes('human')||m.includes('agent')||m.includes('real person')) {
+    return '👨‍💼 Connecting you to a human agent!<br><br>📞 Toll-free: <strong>1800-123-4567</strong><br>📧 support@shopstore.in<br>🕐 Mon–Sat: 9 AM – 9 PM<br><br>Avg wait time: <strong>3 minutes</strong>. Anything else I can help with?';
+  }
+  if (m.includes('account')||m.includes('login')||m.includes('password')) {
+    return '🔐 Account help:<br><br>• <strong>Forgot password?</strong> — Click "Forgot Password", OTP sent to mobile<br>• <strong>Account locked?</strong> — Wait 30 mins or contact support<br>• <strong>Change details?</strong> — Profile > Edit Details<br><br>Need more help?';
+  }
+  if (m.includes('thank')||m.includes('ok')||m.includes('great')||m.includes('perfect')||m.includes('done')) {
+    return '😊 You\'re welcome! Happy to help.<br><br>Is there anything else I can assist you with?';
+  }
+  if (m.includes('hello')||m.includes('hi ')||m.includes('hey')||m.includes('hii')) {
+    return '👋 Hello! Welcome to <strong>ShopAssist AI</strong>.<br><br>I can help with order tracking, returns, payments, delivery, and product queries.<br><br>What can I help you with today?';
+  }
+  return '🤖 Thanks for reaching out!<br><br>I can help with:<br>📦 <strong>Order tracking</strong> — share your order number<br>🔁 <strong>Returns & refunds</strong><br>💳 <strong>Payment issues</strong><br>🚚 <strong>Delivery problems</strong><br>🛒 <strong>Product recommendations</strong><br><br>Could you tell me more? 😊';
+}
+
+let busy = false;
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function quickSend(text){document.getElementById('userInput').value=text;sendMessage();}
+
+function addMessage(role,html){
+  const ca=document.getElementById('chatArea');
+  const row=document.createElement('div');
+  row.className='msg-row '+role;
+  const av=document.createElement('div');
+  av.className='msg-avatar';
+  av.textContent=role==='bot'?'🤖':'👤';
+  const bub=document.createElement('div');
+  bub.className='bubble';
+  if(role==='bot'){const lbl=document.createElement('div');lbl.className='label';lbl.textContent='ShopAssist AI';bub.appendChild(lbl);}
+  const ct=document.createElement('div');
+  ct.innerHTML=html;
+  bub.appendChild(ct);
+  row.appendChild(av);row.appendChild(bub);
+  ca.appendChild(row);ca.scrollTop=ca.scrollHeight;
+}
+
+function showTyping(){
+  const ca=document.getElementById('chatArea');
+  const row=document.createElement('div');row.className='typing-indicator';row.id='typingRow';
+  const av=document.createElement('div');av.className='msg-avatar';av.style.cssText='width:34px;height:34px;background:#028090;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;';av.textContent='🤖';
+  const d=document.createElement('div');d.className='typing-dots';d.innerHTML='<span></span><span></span><span></span>';
+  row.appendChild(av);row.appendChild(d);ca.appendChild(row);ca.scrollTop=ca.scrollHeight;
+}
+function removeTyping(){const el=document.getElementById('typingRow');if(el)el.remove();}
+
+function sendMessage(){
+  const inp=document.getElementById('userInput');
+  const btn=document.getElementById('sendBtn');
+  const text=inp.value.trim();
+  if(!text||busy)return;
+  busy=true;btn.disabled=true;
+  inp.value='';inp.style.height='auto';
+  addMessage('user',text);
+  showTyping();
+  setTimeout(()=>{
+    removeTyping();
+    addMessage('bot',getBotReply(text));
+    busy=false;btn.disabled=false;inp.focus();
+  },900);
+}
+
+addMessage('bot','👋 Hello! I\'m <strong>ShopAssist AI</strong>, your 24/7 e-commerce assistant.<br><br>I can help with:<br>📦 Order tracking &nbsp;|&nbsp; 🔁 Returns & refunds<br>🚚 Delivery issues &nbsp;|&nbsp; 💳 Payment problems<br>🛒 Product queries &nbsp;|&nbsp; 😊 General support<br><br>How can I help you today?');
+</script>
+</body>
+</html>
